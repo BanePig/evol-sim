@@ -28,6 +28,8 @@ class Simulation : sf::Drawable
 
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
+    void completeTurns();
+
     ///////////////////////////
     // GETTERS AND SETTERS
     ///////////////////////////

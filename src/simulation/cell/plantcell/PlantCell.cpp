@@ -19,7 +19,7 @@ PlantCell::~PlantCell()
 
 void PlantCell::completeTurn()
 {
-    this->health += 0.01 / (size + 1);
+    this->health += 0.03 / (size + 1);
     if(health > 1.f) health = 1.f;
     if(health == 1.f) createChild();
 }
@@ -28,10 +28,12 @@ bool PlantCell::createChild()
 {
     auto newSize = this->size * randDouble(0.95, 1.05);
 
+    if(newSize < 0.01) newSize = 0.01;
+
     this->health = .5f;
 
     auto birthAngle = randDouble(0, M_PI * 2);
-    auto offsetMultiplier = (M_SQRT2 * (size + newSize));
+    auto offsetMultiplier = (M_SQRT2 * (size/2 + newSize));
     auto childXOffset = std::sin(birthAngle) * offsetMultiplier;
     auto childYOffset = std::cos(birthAngle) * offsetMultiplier;
 
@@ -52,9 +54,8 @@ bool PlantCell::createChild()
             if(x < 0 || x >= parentSimulation.dimensions.x || y < 0 || y >= parentSimulation.dimensions.y) continue;
             auto& subdiv = parentSimulation.subdivisionAt(x, y);
 
-            for(auto cell : subdiv.nearbyCells)
+            for(auto cell : subdiv.getNearbyCells())
             {
-                if(cell == this) continue;
                 if(cell->getHitBox().intersects(childHitBox)) 
                     return false;
             }
@@ -67,7 +68,8 @@ bool PlantCell::createChild()
 
     auto newColor = sf::Color(clamp(color.r + redMutation, 0, 255), clamp(color.g + greenMutation, 0, 255), clamp(color.b + blueMutation, 0, 255));
 
-    new PlantCell(parentSimulation, childPos, newColor, newSize);
+    auto cell = new PlantCell(parentSimulation, childPos, newColor, newSize);
+    cell->health = 0.1f;
 
     return true;
 }

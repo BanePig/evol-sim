@@ -30,6 +30,19 @@ void Simulation::draw(sf::RenderTarget& target, sf::RenderStates states) const
     }
 }
 
+void Simulation::completeTurns()
+{
+    for(auto cell : cells)
+    {
+        if(cell->getHealth() < 0)
+        {
+            delete cell;
+            continue;
+        }
+        cell->completeTurn();
+    }
+}
+
 ///////////////////////////
 // GETTERS AND SETTERS
 ///////////////////////////

@@ -7,13 +7,22 @@ Cell::Cell(CellType type, Simulation& parentSimulation, const sf::Vector2f& posi
     : type(type), parentSimulation(parentSimulation), position(position), color(color), size(size), health(1.f),
     hitBox(Rectangle(position.x - .5, position.y - .5, size, size))
 {
-    updateSubdivisionSignature();
+    updateNearbySubdivisions();
+    auto& newSubdivision = parentSimulation.subdivisionAt(position.x, position.y);
+    newSubdivision.containedCells.push_back(this);
+    this->containingSubdivision = &newSubdivision;
+
     parentSimulation.cells.push_back(this);
 }
 
 Cell::~Cell()
 {
-    removeSubdivisionSignature();
+    for(auto subdiv : nearbySubdivisions)
+    {
+        subdiv->nearbyCells.remove(this);
+    }
+    containingSubdivision->containedCells.remove(this);
+    
     parentSimulation.cells.remove(this);
 }
 
@@ -28,41 +37,30 @@ void Cell::draw(sf::RenderTarget& target, sf::RenderStates states) const
     target.draw(rect);
 }
 
-void Cell::removeSubdivisionSignature()
+void Cell::updateNearbySubdivisions()
 {
-    /*parentSimulation.subdivisionAt(position.x, position.y).containedCells.remove(this);
+    for(auto subdiv : nearbySubdivisions)
+    {
+        subdiv->nearbyCells.remove(this);
+    }
+    nearbySubdivisions.empty();
     for(int x = position.x - size / 2; x <= std::ceil(position.x + size / 2); x++)
     {
         for(int y = position.y - size / 2; y <= std::ceil(position.y + size / 2); y++)
         {
             if(x < 0 || x >= parentSimulation.dimensions.x || y < 0 || y >= parentSimulation.dimensions.y) continue;
-            parentSimulation.subdivisionAt(x, y).nearbyCells.remove(this);
+            auto& newSubdivision = parentSimulation.subdivisionAt(x, y);
+            newSubdivision.nearbyCells.push_back(this);
+            this->nearbySubdivisions.push_back(&newSubdivision);
         }
-    }*/
-
-    for(auto subdiv : parentSimulation.subdivisions)
-    {
-        subdiv->containedCells.remove(this);
-        subdiv->nearbyCells.remove(this);
     }
 }
-void Cell::updateSubdivisionSignature()
+void Cell::updateContainingSubdivision()
 {
-    /*parentSimulation.subdivisionAt(position.x, position.y).containedCells.push_back(this);
-    for(int x = position.x - size / 2; x <= std::ceil(position.x + size / 2); x++)
-    {
-        for(int y = position.y - size / 2; y <= std::ceil(position.y + size / 2); y++)
-        {
-            if(x < 0 || x >= parentSimulation.dimensions.x || y < 0 || y >= parentSimulation.dimensions.y) continue;
-            parentSimulation.subdivisionAt(x, y).nearbyCells.push_back(this);
-        }
-    }*/
-
-    for(auto subdiv : parentSimulation.subdivisions)
-    {
-        subdiv->containedCells.remove(this);
-        subdiv->nearbyCells.remove(this);
-    }
+    containingSubdivision->containedCells.remove(this);
+    auto& newSubdivision = parentSimulation.subdivisionAt(position.x, position.y);
+    newSubdivision.containedCells.push_back(this);
+    this->containingSubdivision = &newSubdivision;
 }
 
 
@@ -94,9 +92,9 @@ const sf::Vector2f& Cell::getPosition() const
 
 void Cell::setPosition(const sf::Vector2f& pos)
 {
-    removeSubdivisionSignature();
     position = pos;
     hitBox.x = pos.x - .5;
     hitBox.y = pos.y - .5;
-    updateSubdivisionSignature();
+    updateNearbySubdivisions();
+    updateContainingSubdivision();
 }

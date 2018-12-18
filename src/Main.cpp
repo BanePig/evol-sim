@@ -14,6 +14,7 @@ sf::RenderWindow& window = *new sf::RenderWindow(videoMode, "EvoSim", sf::Style:
 
 auto active = true;
 auto paused = true;
+auto targetFps = 30;
 
 void renderLoop()
 {
@@ -33,6 +34,10 @@ void renderLoop()
             {
                 if(event.key.code == sf::Keyboard::Space)
                     paused = !paused;
+                else if(event.key.code == sf::Keyboard::Add)
+                    targetFps++;
+                else if(event.key.code == sf::Keyboard::Subtract && targetFps > 1)
+                    targetFps--;
             }
         }
         window.clear();
@@ -43,7 +48,6 @@ void renderLoop()
 
 void logicLoop()
 {
-    auto targetFps = 30;
     sf::Clock clock;
     window.setActive(false);
     while(active)
@@ -53,10 +57,7 @@ void logicLoop()
             clock.restart();
             continue;
         }
-        for(auto cell : simulation.getAllCells())
-        {
-            cell->completeTurn();
-        }
+        simulation.completeTurns();
         auto timeElapsed = clock.getElapsedTime();
         auto wait = int(1000/targetFps - timeElapsed.asMilliseconds());
         if(wait > 0)
@@ -69,15 +70,15 @@ void logicLoop()
 int main()
 {
     simulation.setScale(10.f);
-    //srand(std::chrono::high_resolution_clock::now().time_since_epoch().count());
-    for(int i = 0; i < 20; i++)
+    srand(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    for(int i = 0; i < 10; i++)
     {
         new PlantCell(simulation,
             sf::Vector2f(randInt(0, videoMode.width / 10 - 1), randInt(0, videoMode.height / 10 - 1)),
-            sf::Color(randInt(0, 255), randInt(0, 255), randInt(0, 255)),
+            sf::Color(randInt(0, 55), randInt(0, 100) + 155, randInt(0, 55)),
             randDouble(0.1, 5.0));
     }
-    for(int i = 0; i < 10; i++)
+    for(int i = 0; i < 1; i++)
     {
         new AnimalCell(simulation,
             sf::Vector2f(randInt(0, videoMode.width / 10 - 1), randInt(0, videoMode.height / 10 - 1)),

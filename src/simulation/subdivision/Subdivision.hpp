@@ -15,9 +15,7 @@ class Subdivision
     std::list<Cell*> nearbyCells;
 
     friend Cell;
-    friend PlantCell;
-    friend AnimalCell;
-
+    
   public:
     const Rectangle hitBox;
     

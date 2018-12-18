@@ -17,16 +17,11 @@ AnimalCell::~AnimalCell()
 
 void AnimalCell::completeTurn()
 {
-    this->health -= 0.00166f / endurance; // With an endurance of 1 animal will last 600 ticks.
-    if(health < 0)
-    {
-        delete this;
-        return;
-    }
     attackIntersectingPrey();
     move();
     attackIntersectingPrey();
-    if(health > .75f && randInt(0, 1 - health) == 0) createChild();
+    if(health > .75f && randDouble(0.0, 1 - health) < 1.0) createChild();
+    this->health -= 0.00166f / endurance; // With an endurance of 1 animal will last 600 ticks.
 }
 
 void AnimalCell::attackIntersectingPrey()
@@ -38,12 +33,16 @@ void AnimalCell::attackIntersectingPrey()
             if(x < 0 || x >= parentSimulation.dimensions.x || y < 0 || y >= parentSimulation.dimensions.y) continue;
             auto& subdiv = parentSimulation.subdivisionAt(x, y);
 
-            for(auto cell : subdiv.nearbyCells)
+            for(auto cell : subdiv.getNearbyCells())
             {
                 if(cell == this) continue;
                 if(cell->getHitBox().intersects(hitBox))
                 {
                     this->attack(cell);
+                    if(cell->getHealth() < 0)
+                    {
+                        delete cell;
+                    }
                 }
             }
         }
@@ -70,7 +69,6 @@ void AnimalCell::attackAnimal(AnimalCell& animal)
     {
         health += animal.size;
         if(health > 1.f) health = 1.f;
-        delete &animal;
     }
 }
 
@@ -81,19 +79,14 @@ void AnimalCell::attackPlant(PlantCell& plant)
     plant.health -= damage;
     health += plant.size * clamp(damage, 0.f, 1.f);
     if(health > 1.f) health = 1.f;
-    if(plant.health < 0)
-    {
-        delete &plant;
-        return;
-    }
 }
 
 void AnimalCell::move()
 {
     this->movementAngle += randDouble(-0.1, 0.1);
     
-    auto xMovement = std::sin(movementAngle) * randDouble(0, speed);
-    auto yMovement = std::cos(movementAngle) * randDouble(0, speed);
+    auto xMovement = std::sin(movementAngle) * randDouble(0, speed) * health;
+    auto yMovement = std::cos(movementAngle) * randDouble(0, speed) * health;
     
     auto newPos = sf::Vector2f(getPosition().x + xMovement, getPosition().y + yMovement);
     if(newPos.x < 0 || newPos.x >= parentSimulation.dimensions.x || newPos.y < 0 || newPos.y >= parentSimulation.dimensions.y) return;
@@ -108,7 +101,7 @@ bool AnimalCell::createChild()
     this->health = health - .5f;
 
     auto birthAngle = randDouble(0, M_PI * 2);
-    auto offsetMultiplier = (M_SQRT2 * (size + newSize));
+    auto offsetMultiplier = (M_SQRT2 * (size/2 + newSize));
     auto childXOffset = std::sin(birthAngle) * offsetMultiplier;
     auto childYOffset = std::cos(birthAngle) * offsetMultiplier;
 

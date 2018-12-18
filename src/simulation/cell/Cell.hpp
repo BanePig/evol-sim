@@ -4,12 +4,16 @@
 #include <SFML/Graphics.hpp>
 #include "../../geometry/Rectangle.hpp"
 #include "CellType.hpp"
+#include <list>
 
 class Simulation;
+class Subdivision;
 
 class Cell : public sf::Drawable
 {
     sf::Vector2f position;
+    Subdivision* containingSubdivision;
+    std::list<Subdivision*> nearbySubdivisions;
 
   protected:
     const sf::Color color;
@@ -18,8 +22,8 @@ class Cell : public sf::Drawable
 
     Rectangle hitBox;
 
-    void removeSubdivisionSignature();
-    void updateSubdivisionSignature();
+    void updateNearbySubdivisions();
+    void updateContainingSubdivision();
 
   public:
     const CellType type;
